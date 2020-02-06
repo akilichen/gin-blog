@@ -37,16 +37,26 @@ func (article *Article) BeforeDelete(scope *gorm.Scope) error {
 	return err
 }
 
-func GetArticle(id int) (article Article) {
-	db.Where("id = ?", id).First(&article)
-	db.Model(&Article{}).Related(&article.Tag)
+func GetArticle(id int) (*Article, error) {
+	var article Article
+	err := db.Where("id = ?", id).First(&article).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	err = db.Model(&article).Related(&article.Tag).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
 
 	//db.Preload("Tag").Where("id = ?", id).First(&article)
-	return
+	return &article, nil
 }
 
-func GetArticles(pageNum int, pageSize int, maps interface{}) (article []Article) {
-	db.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&article)
+func GetArticles(pageNum int, pageSize int, maps interface{}) (article []*Article, err error) {
+	err = db.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&article).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
 	return
 }
 
@@ -55,13 +65,18 @@ func GetArticleTotal(maps interface{}) (count int) {
 	return
 }
 
-func ExistsArticleById(id int) bool {
+func ExistsArticleById(id int) (bool, error) {
 	var article Article
-	db.Select("id").Where("id = ?", id).First(&article)
-	if article.ID > 0 {
-		return true
+	err := db.Select("id").Where("id = ?", id).First(&article).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, err
 	}
-	return false
+
+	if article.ID > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func AddArticle(data map[string]interface{}) bool {
