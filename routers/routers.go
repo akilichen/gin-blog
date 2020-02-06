@@ -3,11 +3,13 @@ package routers
 import (
 	"gin-blog/middleware/jwt"
 	"gin-blog/pkg/setting"
+	"gin-blog/pkg/upload"
 	"gin-blog/routers/api"
 	"gin-blog/routers/api/v1"
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
+	"net/http"
 )
 
 func InitRouter() *gin.Engine {
@@ -45,6 +47,10 @@ func InitRouter() *gin.Engine {
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.POST("/upload", api.UploadImage)
+
+	//使用golang自建静态文件服务器，一般在实战中都是采用CDN或者分布式文件系统
+	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 
 	return r
 }

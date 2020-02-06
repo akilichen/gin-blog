@@ -9,4 +9,5 @@
 out
 gen
 logs
+runtime/upload/images
 go.sum

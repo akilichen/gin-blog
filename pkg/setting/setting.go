@@ -16,39 +16,65 @@ var (
 	JwtSecret    string
 )
 
-func init() {
-	var err error
-	Cfg, err = ini.Load("conf/app.ini")
+type App struct {
+	JwtSecret       string
+	PageSize        int
+	RuntimeRootPath string
+
+	ImagePrefix    string
+	ImageSavePath  string
+	ImageMaxSize   int
+	ImageAllowExts []string
+
+	LogSavePath string
+	LogSaveName string
+	LogFileExt  string
+	TimeFormat  string
+}
+
+type server struct {
+	RunMode      string
+	HttpPort     int
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+}
+
+type Database struct {
+	Type        string
+	User        string
+	Password    string
+	Host        string
+	Name        string
+	TablePrefix string
+}
+
+var (
+	ServerSetting   = &server{}
+	AppSetting      = &App{}
+	DatabaseSetting = &Database{}
+)
+
+func Setup() {
+	Cfg, err := ini.Load("conf/app.ini")
 	if err != nil {
 		log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
 	}
 
-	LoadBase()
-	LoadServer()
-	LoadApp()
-}
-
-func LoadBase() {
-	RunMode = Cfg.Section("").Key("RUN_MODE").MustString("debug")
-}
-
-func LoadServer() {
-	sec, err := Cfg.GetSection("server")
+	err = Cfg.Section("app").MapTo(AppSetting)
 	if err != nil {
-		log.Fatalf("Fail to get section 'server': %v", err)
+		log.Fatalf("Cfg.MapTo AppSetting err: %v", err)
 	}
+	AppSetting.ImageMaxSize *= 1024 * 1024
 
-	HTTPPort = sec.Key("HTTP_PORT").MustInt(8000)
-	ReadTimeout = time.Duration(sec.Key("READ_TIMEOUT").MustInt(60)) * time.Second
-	WriteTimeout = time.Duration(sec.Key("WRITE_TIMEOUT").MustInt(60)) * time.Second
-}
-
-func LoadApp() {
-	sec, err := Cfg.GetSection("app")
+	err = Cfg.Section("server").MapTo(ServerSetting)
 	if err != nil {
-		log.Fatalf("Fail to get section 'app': %v", err)
+		log.Fatalf("map to server setting err:%v", err)
 	}
+	ServerSetting.ReadTimeout *= time.Second
+	ServerSetting.WriteTimeout *= time.Second
 
-	JwtSecret = sec.Key("JWT_SECRET").MustString("!@)*#)!@U#@*!@!)")
-	PageSize = sec.Key("PAGE_SIZE").MustInt(10)
+	err = Cfg.Section("database").MapTo(DatabaseSetting)
+	if err != nil {
+		log.Fatalf("Cfg.MapTo DatabaseSetting err: %v", err)
+	}
 }

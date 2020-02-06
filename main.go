@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"gin-blog/models"
+	"gin-blog/pkg/mylog"
 	"gin-blog/pkg/setting"
 	"gin-blog/routers"
 	"log"
@@ -14,13 +16,17 @@ import (
 )
 
 func main() {
+	setting.Setup()
+	models.Setup()
+	mylog.Setup()
+
 	router := routers.InitRouter()
 
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%d", setting.HTTPPort),
+		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HttpPort),
 		Handler:        router,
-		ReadTimeout:    setting.ReadTimeout,
-		WriteTimeout:   setting.WriteTimeout,
+		ReadTimeout:    setting.ServerSetting.ReadTimeout,
+		WriteTimeout:   setting.ServerSetting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
 
