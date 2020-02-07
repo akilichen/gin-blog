@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"gin-blog/gredis"
 	"gin-blog/models"
 	"gin-blog/pkg/mylog"
 	"gin-blog/pkg/setting"
@@ -19,6 +20,10 @@ func main() {
 	setting.Setup()
 	models.Setup()
 	mylog.Setup()
+	redisError := gredis.Setup()
+	if redisError != nil {
+		fmt.Printf("redis dial error:%v\n", redisError)
+	}
 
 	router := routers.InitRouter()
 
